@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import HeroCard from "./HeroCard";
 
-export default function HeroSlider({ onFilterSelect }) {
+function HeroSlider({ onFilterSelect }) {
   const slides = useMemo(() => [
     {
       title: "Upgrade Your Skills With EduSkilliQ",
@@ -27,55 +27,65 @@ export default function HeroSlider({ onFilterSelect }) {
     }
   ], []);
 
-  const extendedSlides = [...slides, slides[0]];
+  const extendedSlides = useMemo(() => [...slides, slides[0]], [slides]);
+
   const [current, setCurrent] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(true);
+
   const intervalRef = useRef(null);
 
+  // ✅ optimized interval
   useEffect(() => {
     if (isPaused) return;
-    intervalRef.current = setInterval(() => setCurrent(prev => prev + 1), 4000);
+
+    intervalRef.current = setInterval(() => {
+      setCurrent(prev => prev + 1);
+    }, 4000);
+
     return () => clearInterval(intervalRef.current);
   }, [isPaused]);
 
   useEffect(() => {
     if (current === slides.length) {
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         setIsTransitioning(false);
         setCurrent(0);
       }, 600);
+      return () => clearTimeout(timeout);
     } else {
       setIsTransitioning(true);
     }
   }, [current, slides.length]);
 
-  const handleDragEnd = (event, info) => {
+  // ✅ memoized handlers
+  const handleDragEnd = useCallback((event, info) => {
     const threshold = 80;
-    if (info.offset.x < -threshold) setCurrent(prev => prev + 1);
-    else if (info.offset.x > threshold) setCurrent(prev => prev === 0 ? slides.length - 1 : prev - 1);
-  };
+    if (info.offset.x < -threshold) {
+      setCurrent(prev => prev + 1);
+    } else if (info.offset.x > threshold) {
+      setCurrent(prev => (prev === 0 ? slides.length - 1 : prev - 1));
+    }
+  }, [slides.length]);
 
-  const handleFilterClick = (type) => {
-    onFilterSelect(type); // 🔥 Call parent callback
-  };
+  const handleFilterClick = useCallback((type) => {
+    onFilterSelect(type);
+  }, [onFilterSelect]);
 
   return (
     <section className="relative w-full overflow-hidden bg-white py-10">
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute w-[500px] h-[500px] bg-indigo-500/20 blur-[120px] rounded-full top-[-100px] left-[-100px]" />
-        <div className="absolute w-[400px] h-[400px] bg-pink-500/20 blur-[120px] rounded-full bottom-[-100px] right-[-100px]" />
-      </div>
-
       <motion.div
         className="flex cursor-grab active:cursor-grabbing"
         drag="x"
         dragElastic={0.08}
         dragConstraints={{ left: 0, right: 0 }}
         onDragStart={() => setIsPaused(true)}
-        onDragEnd={(e, info) => { handleDragEnd(e, info); setIsPaused(false); }}
+        onDragEnd={(e, info) => {
+          handleDragEnd(e, info);
+          setIsPaused(false);
+        }}
         animate={{ x: `-${current * 100}%` }}
-        transition={isTransitioning ? { duration: 0.7, ease: "easeInOut" } : { duration: 0 }}
+        transition={isTransitioning ? { duration: 0.7 } : { duration: 0 }}
       >
         {extendedSlides.map((slide, index) => (
           <div key={index} className="w-full flex-shrink-0 px-4">
@@ -88,19 +98,8 @@ export default function HeroSlider({ onFilterSelect }) {
           </div>
         ))}
       </motion.div>
-
-      {/* DOTS */}
-      <div className="mt-8 flex justify-center gap-3">
-        {slides.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrent(index)}
-            className={`relative transition-all duration-300 rounded-full ${current === index ? "w-10 h-3 bg-indigo-600" : "w-3 h-3 bg-gray-300"}`}
-          >
-            {current === index && <motion.div layoutId="dot" className="absolute inset-0 rounded-full bg-indigo-400 blur-sm" />}
-          </button>
-        ))}
-      </div>
     </section>
   );
 }
+
+export default React.memo(HeroSlider);

@@ -1,15 +1,18 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback, lazy, Suspense } from "react";
 import { useLocation } from "react-router-dom";
-import { Helmet } from "react-helmet-async"
-import HeroSlider from "../components/hero/Heroslider";
-import CourseCarousel from "../components/courses/CourseCarousel";
-import ReviewSection from "../components/reviews/ReviewSection";
+import { Helmet } from "react-helmet-async";
+
+// 🔥 Lazy load components
+const HeroSlider = lazy(() => import("../components/hero/Heroslider"));
+const CourseCarousel = lazy(() => import("../components/courses/CourseCarousel"));
+const ReviewSection = lazy(() => import("../components/reviews/ReviewSection"));
 
 export default function HomePage() {
   const [filterType, setFilterType] = useState("ALL");
   const courseSectionRef = useRef(null);
   const location = useLocation();
 
+  // ✅ Scroll restore (runs once)
   useEffect(() => {
     if ("scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
@@ -17,17 +20,28 @@ export default function HomePage() {
     setTimeout(() => window.scrollTo({ top: 0, behavior: "auto" }), 0);
   }, []);
 
+  // ✅ Prevent unnecessary re-render
   useEffect(() => {
-    if (location.state?.filterType) {
-      setFilterType(location.state.filterType);
-      courseSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
+    if (!location.state?.filterType) return;
+
+    setFilterType((prev) => {
+      if (prev === location.state.filterType) return prev;
+      return location.state.filterType;
+    });
+
+    courseSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [location.state]);
+
+  // ✅ Memoized handler (no re-creation)
+  const handleFilterSelect = useCallback((type) => {
+    setFilterType((prev) => (prev === type ? prev : type));
+    courseSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
 
   return (
     <div className="bg-gray-50">
       
-      {/* ✅ PROFESSIONAL SEO METADATA */}
+      {/* SEO */}
       <Helmet>
         <title>
           EduSkilliQ FutureTech | Skill-Based Tuition & Job-Ready Training
@@ -45,7 +59,6 @@ export default function HomePage() {
 
         <meta name="author" content="EduSkilliQ FutureTech" />
 
-        {/* ✅ Open Graph (for sharing on WhatsApp, Facebook) */}
         <meta property="og:title" content="EduSkilliQ FutureTech" />
         <meta
           property="og:description"
@@ -54,7 +67,6 @@ export default function HomePage() {
         <meta property="og:url" content="https://eduskilliqfuturetech.com" />
         <meta property="og:type" content="website" />
 
-        {/* ✅ Twitter SEO */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:title"
@@ -65,19 +77,15 @@ export default function HomePage() {
           content="Learn practical skills, build real-world projects, and become job-ready with EduSkilliQ."
         />
 
-        {/* ✅ Canonical URL */}
         <link rel="canonical" href="https://eduskilliqfuturetech.com/" />
       </Helmet>
 
-      {/* Hero Slider */}
-      <HeroSlider
-        onFilterSelect={(type) => {
-          setFilterType(type);
-          courseSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-        }}
-      />
+      {/* 🔥 Lazy + Suspense */}
+      <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
+        <HeroSlider onFilterSelect={handleFilterSelect} />
+      </Suspense>
 
-      {/* Features */}
+      {/* Features (unchanged UI) */}
       <section className="py-20">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-3xl font-bold text-center mb-12">
@@ -114,8 +122,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      <CourseCarousel filterType={filterType} sectionRef={courseSectionRef} />
-      <ReviewSection />
+      <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
+        <CourseCarousel filterType={filterType} sectionRef={courseSectionRef} />
+      </Suspense>
+
+      <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
+        <ReviewSection />
+      </Suspense>
     </div>
   );
 }

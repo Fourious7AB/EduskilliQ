@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import API from "../../api/api"
 
 export default function UserForm({ onSubmit }) {
   const [form, setForm] = useState({
@@ -15,7 +16,7 @@ export default function UserForm({ onSubmit }) {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/v1/roles")
+        const res = await fetch(`${API}/api/v1/roles`)
         const data = await res.json()
 
         setRoles(data)
