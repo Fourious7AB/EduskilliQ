@@ -13,7 +13,7 @@ export default function Login() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const SALESMAN_ROLES = ["BDM", "BDE", "BDM_E", "BDE_E", "CEO"]
+  const SALESMAN_ROLES = ["BDM", "BDE", "BDM_E", "BDE_E", "CEO" ]
 
 const handleSubmit = async (e) => {
   e.preventDefault()
@@ -26,7 +26,7 @@ const handleSubmit = async (e) => {
     const roles = response?.user?.roles || []
 
     const isAdmin = roles.some(r =>
-      r.includes("ADMIN") || r.includes("CTO")
+      r.includes("ADMIN") || r.includes("CTO") 
     )
 
     const isSalesman = roles.some(r =>
