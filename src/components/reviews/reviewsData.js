@@ -1,13 +1,13 @@
 const reviews = [
   {
     id: 1,
-    name: "Rahul Sharma",
+    name: "Stuti Sinha",
     role: "Teacher in EduslilliQ",
     video: "https://res.cloudinary.com/duf3tdqit/video/upload/v1774558678/WhatsApp_Video_2026-03-26_at_2.24.43_PM_kh9klb.mp4",
     rating: 5,
     bg: "from-indigo-200 via-purple-200 to-pink-200",
     thumbnail: "https://res.cloudinary.com/duf3tdqit/image/upload/v1774689384/blob_lf9ngu.png",
-    review: "This platform completely changed my career. I went from zero to job-ready in months."
+    review: "Hi, I'm Stuti Sinha, an M.A in English literature graduate from the Sister Nivedita University. I am dedicated to helping students excel in their studies and competitive exams by providing comprehensive guidance and support."
   },
   {
     id: 2,
