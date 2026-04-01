@@ -1,29 +1,38 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useLocation } from "react-router-dom"; // ✅ ADD
+import { useLocation } from "react-router-dom";
 import useAuthStore from "../store/authStore";
 
 export default function AuthInitializer({ children }) {
-
   const [loading, setLoading] = useState(true);
-  const location = useLocation(); // ✅ ADD
+  const location = useLocation();
 
   useEffect(() => {
-
-    // ✅ PUBLIC ROUTES (NO AUTH NEEDED)
     const publicRoutes = [
-  "/",
-  "/enrollment",
-  "/payment-success",
-  "/payment-failure"
-];
+      "/",
+      "/enrollment",
+      "/payment-success",
+      "/payment-failure",
+    ];
 
+    const { accessToken, setHydrated } = useAuthStore.getState();
+
+    // ✅ 1. SKIP PUBLIC ROUTES
     if (publicRoutes.includes(location.pathname)) {
-      useAuthStore.getState().setHydrated();
+      setHydrated();
       setLoading(false);
-      return; // 🔥 SKIP REFRESH
+      return;
     }
 
+    // ✅ 2. 🔥 GUARD: IF TOKEN ALREADY EXISTS → SKIP REFRESH
+    if (accessToken) {
+      console.log("✅ Token already exists → skip refresh");
+      setHydrated();
+      setLoading(false);
+      return;
+    }
+
+    // ✅ 3. ONLY CALL REFRESH WHEN REALLY NEEDED
     const restoreSession = async () => {
       try {
         const res = await axios.post(
@@ -37,30 +46,25 @@ export default function AuthInitializer({ children }) {
         useAuthStore.setState({
           accessToken,
           user,
-          isAuthenticated: true
+          isAuthenticated: true,
         });
 
       } catch (err) {
-
-        console.log("No active session");
+        console.log("❌ No active session");
 
         useAuthStore.setState({
           accessToken: null,
           user: null,
-          isAuthenticated: false
+          isAuthenticated: false,
         });
-
       } finally {
-
-        useAuthStore.getState().setHydrated();
+        setHydrated();
         setLoading(false);
-
       }
     };
 
     restoreSession();
-
-  }, [location.pathname]); // ✅ IMPORTANT
+  }, [location.pathname]);
 
   if (loading) {
     return (

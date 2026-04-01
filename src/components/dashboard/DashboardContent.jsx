@@ -1,31 +1,32 @@
-import { useEffect, useState, useRef } from "react"
+import {
+  useEffect,
+  useState,
+  lazy,
+  Suspense,
+  useMemo,
+  memo,
+} from "react"
 import { getAdminDashboard } from "../../services/dashboardService"
 import { StatCard } from "./StatCard"
 import html2canvas from "html2canvas"
 
 // COMPONENTS
 import SectionCard from "./SectionCard"
-import GrowthCard from "./GrowthCard"
-import TopCourses from "./TopCourses"
-import TopSalesman from "./TopSalesman"
-import SalesRevenueChart from "./SalesRevenueChart"
-import SalesBarChart from "./SalesBarChart"
-import DashboardFilters from "./DashboardFilters"
 
-export default function DashboardContent() {
+const TopCourses = lazy(() => import("./TopCourses"))
+const TopSalesman = lazy(() => import("./TopSalesman"))
+const SalesBarChart = lazy(() => import("./SalesBarChart"))
 
-  // ✅ STATES
-  const [data, setData] = useState(null)
+export default memo(function DashboardContent() {
+
+  const [data, setData] = useState({})
   const [graph, setGraph] = useState([])
   const [loading, setLoading] = useState(true)
   const [range, setRange] = useState("30d")
+  const [showHeavy, setShowHeavy] = useState(false)
 
-  
-
-  const hasFetched = useRef(false)
-
-  // ✅ FILTER GRAPH
-  const filteredGraph = graph
+  // ✅ MEMO FIX (prevent re-render)
+  const filteredGraph = useMemo(() => graph, [graph])
 
   // ✅ EXPORT
   const exportChart = async () => {
@@ -39,159 +40,216 @@ export default function DashboardContent() {
     link.click()
   }
 
-  // ✅ FETCH DATA (NO revenue-graph API)
   useEffect(() => {
 
-    if (hasFetched.current && range === "30d") return
-    hasFetched.current = true
+  const CACHE_KEY = `dashboard_${range}`
+  const CACHE_EXPIRY = 5 * 60 * 1000 // 5 minutes
 
-    const fetchDashboard = async () => {
-      setLoading(true)
-      try {
+  // ✅ 1. LOAD FROM CACHE (INSTANT UI)
+  try {
+    const cachedRaw = localStorage.getItem(CACHE_KEY)
 
-        const dashboardRes = await getAdminDashboard(range)
-        setData(dashboardRes)
+    if (cachedRaw) {
+      const cached = JSON.parse(cachedRaw)
 
-        // 🔥 BUILD GRAPH FROM DIRECTOR DATA
-       setGraph([
-  {
-    label: "Last 7 Days",
-    revenue: dashboardRes.revenue7Days || 0,
-    sales: dashboardRes.sales7Days || 0,
-  },
-  {
-    label: "Last 30 Days",
-    revenue: dashboardRes.revenue30Days || 0,
-    sales: dashboardRes.sales30Days || 0,
-  },
-  {
-    label: "Last 1 Year",
-    revenue: dashboardRes.revenue1Year || 0,
-    sales: dashboardRes.sales1Year || 0,
-  },
-])
+      if (cached?.data && Date.now() - cached.timestamp < CACHE_EXPIRY) {
+        console.log("⚡ Using cached data")
 
-      } catch (err) {
-        console.error("Dashboard error:", err)
-      } finally {
+        setData(cached.data)
+
+        setGraph([
+          {
+            label: "Last 7 Days",
+            revenue: cached.data?.revenue7Days || 0,
+            sales: cached.data?.sales7Days || 0,
+          },
+          {
+            label: "Last 30 Days",
+            revenue: cached.data?.revenue30Days || 0,
+            sales: cached.data?.sales30Days || 0,
+          },
+          {
+            label: "Last 1 Year",
+            revenue: cached.data?.revenue1Year || 0,
+            sales: cached.data?.sales1Year || 0,
+          },
+        ])
+
         setLoading(false)
       }
     }
-
-    fetchDashboard()
-
-  }, [range])
-
-  // ✅ LOADING UI
-  if (loading) {
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        {[...Array(8)].map((_, i) => (
-          <div key={i} className="h-28 bg-gray-200 animate-pulse rounded-xl dark:bg-gray-700" />
-        ))}
-      </div>
-    )
+  } catch (e) {
+    console.warn("Cache parse error", e)
   }
 
- return (
-  <div className="space-y-8 ">
+  // ✅ 2. FETCH NEW DATA (BACKGROUND)
+  const fetchDashboard = async () => {
+    try {
+      const dashboardRes = await getAdminDashboard(range)
+      const newData = dashboardRes || {}
 
-    {/* 🔥 HEADER */}
-    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      const cachedRaw = localStorage.getItem(CACHE_KEY)
+      const cached = cachedRaw ? JSON.parse(cachedRaw) : null
 
-      <div>
-        <h1 className="text-3xl font-bold  ">
+      // ✅ 3. COMPARE DATA
+      const isSame =
+        cached && JSON.stringify(cached.data) === JSON.stringify(newData)
+
+      if (!isSame) {
+        console.log("🔄 Data changed → updating UI")
+
+        const runIdle =
+          window.requestIdleCallback || ((cb) => setTimeout(cb, 0))
+
+        runIdle(() => {
+          setData(newData)
+
+          setGraph([
+            {
+              label: "Last 7 Days",
+              revenue: newData?.revenue7Days || 0,
+              sales: newData?.sales7Days || 0,
+            },
+            {
+              label: "Last 30 Days",
+              revenue: newData?.revenue30Days || 0,
+              sales: newData?.sales30Days || 0,
+            },
+            {
+              label: "Last 1 Year",
+              revenue: newData?.revenue1Year || 0,
+              sales: newData?.sales1Year || 0,
+            },
+          ])
+
+          setLoading(false)
+
+          // ✅ 4. UPDATE CACHE WITH TIMESTAMP
+          localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({
+              data: newData,
+              timestamp: Date.now(),
+            })
+          )
+        })
+
+      } else {
+        console.log("✅ Data same → no UI update")
+      }
+
+    } catch (err) {
+      console.error("Dashboard error:", err)
+      setLoading(false)
+    }
+  }
+
+  fetchDashboard()
+
+  // ✅ KEEP YOUR PERFORMANCE DELAY
+  const timer = setTimeout(() => setShowHeavy(true), 1200)
+  return () => clearTimeout(timer)
+
+}, [range])
+
+  return (
+    <>
+      {/* 🔥 PRIORITY HEADER (LCP FIX) */}
+      <div className="p-4">
+        <h1
+          className="text-3xl font-bold"
+          style={{ contentVisibility: "auto" }}
+        >
           Dashboard
         </h1>
-        <p className="text-sm ">
+        <p className="text-sm">
           Overview of your platform performance
         </p>
       </div>
 
-      {/* 🔥 ACTIONS */}
-      <div className="flex flex-wrap gap-3">
+      {/* 🔥 REST UI */}
+      <div className="space-y-8">
 
-        {/* RANGE SELECT */}
-        <select
-          value={range}
-          onChange={(e) => setRange(e.target.value)}
-          className="input"
-        >
-          <option value="7d">Last 7 Days</option>
-          <option value="30d">Last 30 Days</option>
-          <option value="1y">Last 1 Year</option>
-        </select>
+        {/* FILTER */}
+        <div className="flex flex-wrap gap-3">
+          <select
+            value={range}
+            onChange={(e) => setRange(e.target.value)}
+            className="input"
+          >
+            <option value="7d">Last 7 Days</option>
+            <option value="30d">Last 30 Days</option>
+            <option value="1y">Last 1 Year</option>
+          </select>
 
-        {/* EXPORT */}
-        <button
-          onClick={exportChart}
-          className="btn btn-primary"
-        >
-          Export
-        </button>
+          <button onClick={exportChart} className="btn btn-primary">
+            Export
+          </button>
+        </div>
+
+        {/* MAIN GRID */}
+        <div className="grid gap-6 lg:grid-cols-2">
+
+          <SectionCard title="Revenue">
+            <StatCard title="Total Revenue" value={loading ? "..." : `₹${data?.totalRevenue ?? 0}`} />
+            <StatCard title="Monthly Revenue" value={loading ? "..." : `₹${data?.monthlyRevenue ?? 0}`} />
+          </SectionCard>
+
+          <SectionCard title="Sales">
+            <StatCard title="Total Sales" value={loading ? "..." : data?.totalSales ?? 0} />
+            <StatCard title="Monthly Sales" value={loading ? "..." : data?.monthlySales ?? 0} />
+          </SectionCard>
+
+          <SectionCard title="Students">
+            <StatCard title="Total Students" value={loading ? "..." : data?.totalStudents ?? 0} />
+            <StatCard title="New This Month" value={loading ? "..." : data?.newStudentsThisMonth ?? 0} />
+          </SectionCard>
+
+          <SectionCard title="Subscriptions">
+            <StatCard title="Total" value={loading ? "..." : data?.totalSubscriptions ?? 0} />
+            <StatCard title="Active" value={loading ? "..." : data?.activeSubscriptions ?? 0} />
+            <StatCard title="Expired" value={loading ? "..." : data?.expiredSubscriptions ?? 0} />
+          </SectionCard>
+
+        </div>
+
+        {/* TIME ANALYTICS */}
+        <SectionCard title="Time Analytics">
+          <StatCard title="Revenue (7d)" value={data?.revenue7Days ?? 0} />
+          <StatCard title="Revenue (30d)" value={data?.revenue30Days ?? 0} />
+          <StatCard title="Revenue (1y)" value={data?.revenue1Year ?? 0} />
+          <StatCard title="Sales (7d)" value={data?.sales7Days ?? 0} />
+          <StatCard title="Sales (30d)" value={data?.sales30Days ?? 0} />
+          <StatCard title="Sales (1y)" value={data?.sales1Year ?? 0} />
+        </SectionCard>
+
+        {/* HEAVY SECTION */}
+        {showHeavy && (
+          <div className="grid gap-6 lg:grid-cols-3">
+
+            <div id="chart-section" className="lg:col-span-2">
+              <Suspense fallback={<div className="h-[300px] bg-gray-200 rounded-xl" />}>
+                <SalesBarChart
+                  data={
+                    filteredGraph.length
+                      ? filteredGraph
+                      : [{ label: "No Data", revenue: 0, sales: 0 }]
+                  }
+                />
+              </Suspense>
+            </div>
+
+            <div className="space-y-6">
+              <Suspense fallback={<div>Loading...</div>}>
+                <TopCourses courses={data?.topCourses || []} />
+                <TopSalesman data={data?.topSalesman || []} />
+              </Suspense>
+            </div>
+
+          </div>
+        )}
 
       </div>
-    </div>
-
-    {/* 🔥 GROWTH CARDS */}
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <GrowthCard title="Revenue Growth" value={data?.revenueGrowth} />
-      <GrowthCard title="Sales Growth" value={data?.salesGrowth} />
-      <GrowthCard title="Renewal Rate" value={data?.renewalRate} />
-    </div>
-
-    {/* 🔥 MAIN STATS GRID */}
-    <div className="grid gap-6 lg:grid-cols-2">
-
-      <SectionCard title="Revenue">
-        <StatCard title="Total Revenue" value={`₹${data?.totalRevenue ?? 0}`} />
-        <StatCard title="Monthly Revenue" value={`₹${data?.monthlyRevenue ?? 0}`} />
-      </SectionCard>
-
-      <SectionCard title="Sales">
-        <StatCard title="Total Sales" value={data?.totalSales ?? 0} />
-        <StatCard title="Monthly Sales" value={data?.monthlySales ?? 0} />
-      </SectionCard>
-
-      <SectionCard title="Students">
-        <StatCard title="Total Students" value={data?.totalStudents ?? 0} />
-        <StatCard title="New This Month" value={data?.newStudentsThisMonth ?? 0} />
-      </SectionCard>
-
-      <SectionCard title="Subscriptions">
-        <StatCard title="Total" value={data?.totalSubscriptions ?? 0} />
-        <StatCard title="Active" value={data?.activeSubscriptions ?? 0} />
-        <StatCard title="Expired" value={data?.expiredSubscriptions ?? 0} />
-      </SectionCard>
-
-    </div>
-
-    {/* 🔥 TIME ANALYTICS */}
-    <SectionCard title="Time Analytics">
-      <StatCard title="Revenue (7d)" value={data?.revenue7Days ?? 0} />
-      <StatCard title="Revenue (30d)" value={data?.revenue30Days ?? 0} />
-      <StatCard title="Revenue (1y)" value={data?.revenue1Year ?? 0} />
-      <StatCard title="Sales (7d)" value={data?.sales7Days ?? 0} />
-      <StatCard title="Sales (30d)" value={data?.sales30Days ?? 0} />
-      <StatCard title="Sales (1y)" value={data?.sales1Year ?? 0} />
-    </SectionCard>
-
-    {/* 🔥 CHART + LIST GRID */}
-    <div className="grid gap-6 lg:grid-cols-3">
-
-      {/* CHART */}
-      <div id="chart-section" className="lg:col-span-2">
-        <SalesBarChart data={filteredGraph} />
-      </div>
-
-      {/* SIDE LISTS */}
-      <div className="space-y-6">
-        <TopCourses courses={data?.topCourses} />
-        <TopSalesman data={data?.topSalesman} />
-      </div>
-
-    </div>
-
-  </div>
-)
-}
+    </>
+  )
+})

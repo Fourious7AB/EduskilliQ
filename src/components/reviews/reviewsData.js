@@ -11,13 +11,13 @@ const reviews = [
   },
   {
     id: 2,
-    name: "Priya Das",
+    name: "Sudhanshu Kumar",
     role: "Teacher in EduslilliQ",
     video: "https://res.cloudinary.com/duf3tdqit/video/upload/v1774585221/WhatsApp_Video_2026-03-26_at_1.47.02_PM_xdocxd.mp4",
      thumbnail: "https://res.cloudinary.com/duf3tdqit/image/upload/v1774689384/blob_lf9ngu.png",
      bg: "from-blue-200 via-cyan-200 to-indigo-200",
     rating: 5,
-    review: "The UI/UX teaching style is insane. Everything feels so practical and real-world."
+    review: "Hi, I'm Sudhanshu Kumar, an M.Sc. Physics graduate from IIT (ISM) Dhanbad. With a strong background in Semiconductor Physics and a history of academic excellence, I focus on helping students bridge the gap between core concepts and competitive exam success."
   }
 ]
 

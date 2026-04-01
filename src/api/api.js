@@ -2,8 +2,10 @@ import axios from "axios"
 import useAuthStore from "../store/authStore"
 import useUIStore from "../store/uiStore"
 
-const BASE_URL = import.meta.env.VITE_BACKEND_URL
+// ✅ Rename this
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
+// ✅ Axios instance
 const API = axios.create({
   baseURL: BASE_URL,
   withCredentials: true
@@ -25,7 +27,7 @@ API.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken
   const { startLoading } = useUIStore.getState()
 
-  startLoading() // 🔥 START LOADER
+  startLoading()
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -36,7 +38,7 @@ API.interceptors.request.use((config) => {
 
 API.interceptors.response.use(
   (res) => {
-    useUIStore.getState().stopLoading() // 🔥 STOP LOADER
+    useUIStore.getState().stopLoading()
     return res
   },
   async (error) => {
@@ -62,7 +64,7 @@ API.interceptors.response.use(
       try {
 
         const refreshResponse = await axios.post(
-          "http://localhost:8080/api/v1/auth/refresh",
+          `${BASE_URL}/api/v1/auth/refresh`,   // ✅ FIXED (no localhost)
           {},
           { withCredentials: true }
         )
