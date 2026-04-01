@@ -9,19 +9,18 @@ export default function UserForm({ onSubmit }) {
     role: "",
   })
 
-  const [roles, setRoles] = useState([]) // ✅ roles from backend
+  const [roles, setRoles] = useState([])
   const [loading, setLoading] = useState(false)
 
-  // ✅ FETCH ROLES FROM BACKEND
+  // ✅ FIXED: FETCH ROLES USING AXIOS INSTANCE
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await fetch(`${API}/api/v1/roles`)
-        const data = await res.json()
+        const res = await API.get("/api/v1/roles")   // ✅ FIX
+        const data = res.data                        // ✅ FIX
 
         setRoles(data)
 
-        // ✅ set default role automatically
         if (data.length > 0) {
           setForm((prev) => ({ ...prev, role: data[0] }))
         }
@@ -46,8 +45,7 @@ export default function UserForm({ onSubmit }) {
       name: form.name,
       email: form.email,
       password: form.password,
-      roles: [form.role], 
-
+      roles: [form.role],
     })
 
     setLoading(false)
@@ -64,7 +62,7 @@ export default function UserForm({ onSubmit }) {
           value={form.name}
           onChange={handleChange}
           placeholder="Enter full name"
-         className="input mt-1 w-full"
+          className="input mt-1 w-full"
           required
         />
       </div>
@@ -99,7 +97,7 @@ export default function UserForm({ onSubmit }) {
         />
       </div>
 
-      {/* ✅ DYNAMIC ROLE */}
+      {/* ROLE */}
       <div>
         <label className="text-sm font-medium text-gray-700">Role</label>
 
@@ -121,15 +119,8 @@ export default function UserForm({ onSubmit }) {
         </select>
       </div>
 
-      {/* BUTTONS */}
+      {/* BUTTON */}
       <div className="flex justify-end gap-3 pt-4">
-        {/* <button
-          type="button"
-          className="btn btn-primary"
-        >
-          Cancel
-        </button> */}
-
         <button
           type="submit"
           disabled={loading}
