@@ -13,7 +13,7 @@ export default function Login() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const SALESMAN_ROLES = ["BDM", "BDE", "BDM_E", "BDE_E", "CEO" ]
+  const SALESMAN_ROLES = ["BDM", "BDE", "BDM_E", "BDE_E", "CEO","CRM" ]
 
 const handleSubmit = async (e) => {
   e.preventDefault()
