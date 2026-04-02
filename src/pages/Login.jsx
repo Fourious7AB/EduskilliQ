@@ -36,7 +36,7 @@ const handleSubmit = async (e) => {
     if (isAdmin) {
       navigate("/admin", { replace: true })
     } else if (isSalesman) {
-      navigate("/sales", { replace: true })   // ✅ NEW
+      navigate("/sales", { replace: true })   
     } else {
       alert("Unauthorized role")
     }
