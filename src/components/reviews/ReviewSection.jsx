@@ -114,7 +114,7 @@ export default function ReviewSection() {
   return (
     <section
   ref={sectionRef}
-  className="relative py-24  overflow-hidden"
+  className="relative py-10  overflow-hidden"
 >
       {/* Gradient BG */}
       <div
@@ -128,15 +128,40 @@ export default function ReviewSection() {
         className="absolute inset-0 w-full h-full object-cover -z-20 blur-3xl scale-110 opacity-40 transition-all duration-700"
       />
 
-      {/* Heading */}
-      <div className="text-center mb-16 px-4">
-        <h2 className="text-3xl sm:text-5xl font-bold text-gray-800">
+      <div className="relative text-center mb-20 px-4 overflow-hidden">
+
+  {/* Background Glow */}
+  <div className="absolute inset-0 -z-10 flex justify-center">
+    <div className="w-[500px] h-[300px] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-20 blur-3xl rounded-full"></div>
+  </div>
+
+  <div className="relative text-center mb-20 px-4">
+        <h2 className="
+          text-3xl sm:text-5xl md:text-6xl
+          font-bold
+          text-gray-800
+          tracking-tight
+        ">
           Our Experts & Mentors
         </h2>
-        <p className="text-gray-600 mt-4 text-sm sm:text-base">
-         Develop skills that matter, with guidance from those who know best.
+
+        <div className="mt-3 flex justify-center">
+          <div className="h-[3px] w-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
+        </div>
+
+        <p className="
+          mt-6
+          max-w-2xl mx-auto
+          text-gray-600
+          text-sm sm:text-base md:text-lg
+        ">
+          Develop skills that matter, with guidance from those who know best.
         </p>
       </div>
+
+  
+
+</div>
 
       {/* 🎥 Carousel */}
       <motion.div
@@ -144,7 +169,7 @@ export default function ReviewSection() {
         onScroll={handleScroll}
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
-        className="flex gap-6 sm:gap-10 overflow-x-auto px-4 sm:px-10 snap-x snap-mandatory no-scrollbar"
+        className="flex gap-6 sm:gap-10 overflow-x-auto px-2 sm:px-10 snap-x snap-mandatory no-scrollbar"
       >
         {loopData.map((item, index) => (
           <div key={index} className="snap-center shrink-0">

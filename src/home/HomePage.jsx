@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef, useCallback, lazy, Suspense } from "react";
 import { useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
+import LogoSlider from "../components/common/LogoSlider";
 
-// 🔥 Lazy load components
+// Lazy load
 const HeroSlider = lazy(() => import("../components/hero/Heroslider"));
 const CourseCarousel = lazy(() => import("../components/courses/CourseCarousel"));
 const ReviewSection = lazy(() => import("../components/reviews/ReviewSection"));
@@ -12,7 +13,7 @@ export default function HomePage() {
   const courseSectionRef = useRef(null);
   const location = useLocation();
 
-  // ✅ Scroll restore (runs once)
+  // Scroll restore
   useEffect(() => {
     if ("scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
@@ -20,115 +21,132 @@ export default function HomePage() {
     setTimeout(() => window.scrollTo({ top: 0, behavior: "auto" }), 0);
   }, []);
 
-  // ✅ Prevent unnecessary re-render
+  // Handle filter navigation
   useEffect(() => {
     if (!location.state?.filterType) return;
 
-    setFilterType((prev) => {
-      if (prev === location.state.filterType) return prev;
-      return location.state.filterType;
-    });
+    setFilterType((prev) =>
+      prev === location.state.filterType ? prev : location.state.filterType
+    );
 
     courseSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [location.state]);
 
-  // ✅ Memoized handler (no re-creation)
   const handleFilterSelect = useCallback((type) => {
     setFilterType((prev) => (prev === type ? prev : type));
     courseSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
   return (
-    <div className="bg-gray-50">
-      
+    <div className="relative bg-gradient-to-br from-[#f0f9ff] via-white to-[#ecfeff] text-gray-900 overflow-hidden">
+
+      {/* 🌟 MATCHED PREMIUM BACKGROUND */}
+      <div className="absolute inset-0 -z-10">
+
+        {/* Blue glow */}
+        <div className="absolute top-[-120px] left-[-120px] w-[350px] h-[350px] bg-blue-200/40 blur-[120px]" />
+
+        {/* Green glow */}
+        <div className="absolute bottom-[-120px] right-[-120px] w-[350px] h-[350px] bg-emerald-200/40 blur-[120px]" />
+
+        {/* Center blend */}
+        <div className="absolute top-[40%] left-[40%] w-[300px] h-[300px] bg-cyan-100/30 blur-[100px]" />
+
+      </div>
+
       {/* SEO */}
       <Helmet>
-        <title>
-          EduSkilliQ FutureTech | Skill-Based Tuition & Job-Ready Training
-        </title>
-
+        <title>EduSkilliQ FutureTech | Skill-Based Training</title>
         <meta
           name="description"
-          content="EduSkilliQ FutureTech offers expert-led tuition and skill-based courses to transform students into confident, job-ready professionals with real-world project experience."
+          content="Learn practical skills and become job-ready with EduSkilliQ FutureTech."
         />
-
-        <meta
-          name="keywords"
-          content="tuition center, skill development, job-ready training, MERN stack, student courses, practical learning, EduSkilliQ"
-        />
-
-        <meta name="author" content="EduSkilliQ FutureTech" />
-
-        <meta property="og:title" content="EduSkilliQ FutureTech" />
-        <meta
-          property="og:description"
-          content="Transforming students into skilled professionals through expert mentorship and practical learning."
-        />
-        <meta property="og:url" content="https://eduskilliqfuturetech.com" />
-        <meta property="og:type" content="website" />
-
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta
-          name="twitter:title"
-          content="EduSkilliQ FutureTech | Skill-Based Training"
-        />
-        <meta
-          name="twitter:description"
-          content="Learn practical skills, build real-world projects, and become job-ready with EduSkilliQ."
-        />
-
         <link rel="canonical" href="https://eduskilliqfuturetech.com/" />
       </Helmet>
 
-      {/* 🔥 Lazy + Suspense */}
+      {/* HERO */}
       <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
         <HeroSlider onFilterSelect={handleFilterSelect} />
       </Suspense>
 
-      {/* Features (unchanged UI) */}
+      {/* Divider */}
+      <div className="h-px bg-gradient-to-r from-transparent via-gray-300/50 to-transparent my-14" />
+
+      {/* FEATURES */}
       <section className="py-20">
         <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center mb-12">
+
+          <h2 className="
+            text-3xl md:text-4xl 
+            font-semibold text-center mb-12
+            bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900
+            bg-clip-text text-transparent
+          ">
             Why Choose EduSkilliQ?
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="relative group bg-white/30 backdrop-blur-xl border border-white/20 p-8 rounded-2xl shadow-lg hover:shadow-2xl text-center transition-all duration-300 hover:bg-white/40">
-              <div className="absolute inset-0 rounded-2xl bg-white/10 opacity-0 group-hover:opacity-100 transition" />
-              <h3 className="text-xl font-semibold mb-3">Expert Mentors</h3>
-              <p className="text-gray-600">
-                Learn from experienced industry professionals.
-              </p>
-            </div>
 
-            <div className="bg-white p-8 rounded-xl shadow-lg text-center">
-              <h3 className="text-xl font-semibold mb-3">
-                Practical Projects
-              </h3>
-              <p className="text-gray-600">
-                Build real-world projects with hands-on learning.
-              </p>
-            </div>
+            {[
+              {
+                title: "Expert Mentors",
+                desc: "Learn from experienced industry professionals.",
+              },
+              {
+                title: "Practical Projects",
+                desc: "Build real-world projects with hands-on learning.",
+              },
+              {
+                title: "Career Support",
+                desc: "Resume building and interview preparation guidance.",
+              },
+            ].map((item, i) => (
+              <div
+                key={i}
+                className="
+                  group
+                  bg-white/70 backdrop-blur-xl
+                  border border-gray-200/50
+                  p-8 rounded-2xl
+                  shadow-lg hover:shadow-xl
+                  transition-all duration-300
+                  hover:-translate-y-2
+                  text-center
+                "
+              >
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">
+                  {item.title}
+                </h3>
+                <p className="text-gray-600">{item.desc}</p>
+              </div>
+            ))}
 
-            <div className="bg-white p-8 rounded-xl shadow-lg text-center">
-              <h3 className="text-xl font-semibold mb-3">
-                Career Support
-              </h3>
-              <p className="text-gray-600">
-                Resume building and interview preparation guidance.
-              </p>
-            </div>
           </div>
         </div>
       </section>
 
+      {/* Divider */}
+      <div className="h-px bg-gradient-to-r from-transparent via-gray-300/50 to-transparent my-2" />
+
+      {/* COURSES */}
       <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
         <CourseCarousel filterType={filterType} sectionRef={courseSectionRef} />
       </Suspense>
 
+      {/* Divider */}
+      <div className="h-px bg-gradient-to-r from-transparent via-gray-300/50 to-transparent my-2" />
+
+      {/* LOGOS */}
+      <LogoSlider />
+
+      {/* Divider */}
+      <div className="h-px bg-gradient-to-r from-transparent via-gray-300/50 to-transparent my-14" />
+
+      {/* REVIEWS */}
       <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
         <ReviewSection />
       </Suspense>
+
     </div>
   );
 }

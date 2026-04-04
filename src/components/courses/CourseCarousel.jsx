@@ -9,13 +9,23 @@ export default function CourseCarousel({ filterType = "ALL", sectionRef }) {
   const [courses, setCourses] = useState([]);
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const scrollRef = useRef(null);
+
+  // 🔥 DRAG STATES
+  const isDown = useRef(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
 
   const fetchCourses = async () => {
     try {
       const data = await getCourses();
       const list = Array.isArray(data) ? data : data.content || [];
+
+      console.log("ALL COURSES:", list);
+
       const enabledCourses = list.filter(c => c.enabled !== false);
+
       setCourses(enabledCourses);
       setFilteredCourses(enabledCourses);
     } catch {
@@ -25,45 +35,144 @@ export default function CourseCarousel({ filterType = "ALL", sectionRef }) {
     }
   };
 
-  useEffect(() => { fetchCourses(); }, []);
+  useEffect(() => {
+    fetchCourses();
+  }, []);
 
-  // 🔥 Filter dynamically by courseClass
+  // 🔥 FILTER
   useEffect(() => {
     if (!courses.length) return;
+
     if (filterType === "ALL") {
       setFilteredCourses(courses);
     } else {
-      const result = courses.filter(c => c.courseClass?.toLowerCase() === filterType.toLowerCase());
+      const result = courses.filter(
+        c => c.courseClass?.toLowerCase() === filterType.toLowerCase()
+      );
       setFilteredCourses(result);
     }
   }, [courses, filterType]);
 
+  // 🔥 BUTTON SCROLL
   const scroll = (dir) => {
     const width = scrollRef.current.clientWidth;
-    scrollRef.current.scrollBy({ left: dir === "left" ? -width : width, behavior: "smooth" });
+    scrollRef.current.scrollBy({
+      left: dir === "left" ? -width : width,
+      behavior: "smooth",
+    });
+  };
+
+  // 🔥 DRAG HANDLERS
+  const handleMouseDown = (e) => {
+    isDown.current = true;
+    startX.current = e.pageX - scrollRef.current.offsetLeft;
+    scrollLeft.current = scrollRef.current.scrollLeft;
+  };
+
+  const handleMouseUp = () => (isDown.current = false);
+  const handleMouseLeave = () => (isDown.current = false);
+
+  const handleMouseMove = (e) => {
+    if (!isDown.current) return;
+    e.preventDefault();
+
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX.current) * 1.5;
+
+    scrollRef.current.scrollLeft = scrollLeft.current - walk;
   };
 
   return (
     <section ref={sectionRef} className="relative py-14 sm:py-20 overflow-hidden">
+      
+      {/* BG */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 left-[-100px] w-[400px] h-[400px] bg-blue-300/30 blur-[120px]" />
         <div className="absolute bottom-10 right-[-100px] w-[400px] h-[400px] bg-indigo-300/30 blur-[120px]" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative">
-        <div className="flex justify-between items-center mb-8 sm:mb-10">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">Explore Courses</h2>
-          <div className="hidden md:flex lg:hidden gap-3">
-            <button onClick={() => scroll("left")} className="p-3 rounded-full bg-white border shadow hover:shadow-md transition"><ChevronLeft size={20} /></button>
-            <button onClick={() => scroll("right")} className="p-3 rounded-full bg-white border shadow hover:shadow-md transition"><ChevronRight size={20} /></button>
-          </div>
-        </div>
 
-        <div ref={scrollRef} className="flex gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide pb-2 lg:grid lg:grid-cols-4 lg:grid-rows-2 lg:gap-6 lg:overflow-hidden">
+        {/* HEADER */}
+       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12 gap-6">
+
+  {/* LEFT CONTENT */}
+  <div>
+    <h2 className="
+      text-3xl sm:text-4xl md:text-5xl
+      font-bold
+      tracking-tight
+      bg-gradient-to-r from-slate-900 via-indigo-700 to-slate-900
+      bg-clip-text text-transparent
+    ">
+      Explore Courses
+    </h2>
+
+    {/* Subheading (IMPORTANT for premium feel) */}
+    <p className="mt-2 text-gray-500 text-sm sm:text-base max-w-md">
+      Discover industry-ready courses designed to build real-world skills and boost your career.
+    </p>
+
+    {/* Stylish underline */}
+    <div className="mt-4 w-20 h-[4px] rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+  </div>
+
+  {/* RIGHT BUTTONS */}
+  <div className="hidden md:flex items-center gap-3">
+
+    <button
+      onClick={() => scroll("left")}
+      className="
+        p-3 rounded-full
+        bg-white/80 backdrop-blur-md
+        border border-gray-200
+        shadow-md hover:shadow-lg
+        transition-all duration-300
+        hover:scale-105
+      "
+    >
+      <ChevronLeft className="text-gray-700" />
+    </button>
+
+    <button
+      onClick={() => scroll("right")}
+      className="
+        p-3 rounded-full
+        bg-gradient-to-r from-blue-600 to-indigo-600
+        text-white
+        shadow-md hover:shadow-lg
+        transition-all duration-300
+        hover:scale-105
+      "
+    >
+      <ChevronRight />
+    </button>
+
+  </div>
+</div>
+
+        {/* 🔥 SCROLL + GRID COMBO */}
+        <div
+          ref={scrollRef}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+          onMouseMove={handleMouseMove}
+          className="
+            grid grid-flow-col
+            auto-cols-[75%] sm:auto-cols-[45%] md:auto-cols-[30%] lg:auto-cols-[22%]
+            grid-rows-1 lg:grid-rows-2
+            gap-5 overflow-x-auto scroll-smooth pb-2 pt-2
+            [&::-webkit-scrollbar]:hidden
+            cursor-grab active:cursor-grabbing
+          "
+        >
           {loading
-            ? Array.from({ length: 8 }).map((_, i) => <CourseSkeleton key={i} />)
-            : (filteredCourses.length ? filteredCourses : courses).slice(0, 8).map((course, i) => (
-                <div key={course.id || course.courseId || i} className="min-w-[80%] sm:min-w-[45%] md:min-w-[30%] lg:min-w-0 lg:w-full snap-start">
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <CourseSkeleton key={i} />
+              ))
+            : (filteredCourses.length ? filteredCourses : courses).map((course, i) => (
+                <div key={course.id || i} className="snap-center">
                   <CourseCardPublic course={course} />
                 </div>
               ))}
