@@ -21,7 +21,7 @@ export default function Navbar() {
 
   // numbers
   const whatsappNumber = "8653903270"
-  const phoneNumber = "0324450516"
+  const phoneNumber = "9332554390"
 
   // detect device
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
