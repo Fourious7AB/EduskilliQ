@@ -6,10 +6,8 @@ export default function HeroCard({ slide, onHoverStart, onHoverEnd, onButtonClic
 
   const handleClick = () => {
     if (window.location.pathname === "/") {
-      // Already on homepage -> just call callback
       onButtonClick(slide.type);
     } else {
-      // Navigate to homepage + pass filterType
       navigate("/", { state: { filterType: slide.type } });
     }
   };
@@ -24,6 +22,7 @@ export default function HeroCard({ slide, onHoverStart, onHoverEnd, onButtonClic
       <div className="absolute inset-0 bg-white/10 backdrop-blur-xl pointer-events-none" />
 
       <div className="relative grid md:grid-cols-2 items-center gap-10 h-full">
+        
         {/* Text */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -31,10 +30,16 @@ export default function HeroCard({ slide, onHoverStart, onHoverEnd, onButtonClic
           transition={{ duration: 0.8 }}
           className="space-y-6 text-center md:text-left"
         >
-          <h1 className="text-3xl md:text-5xl font-bold leading-tight">{slide.title}</h1>
-          <p className="text-lg text-white/80 max-w-md">{slide.desc}</p>
+          <h1 className="text-3xl md:text-5xl font-bold leading-tight">
+            {slide.title}
+          </h1>
+
+          <p className="text-lg text-white/80 max-w-md">
+            {slide.desc}
+          </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+            
             <button
               onClick={handleClick}
               className="relative overflow-hidden bg-white text-indigo-700 px-6 py-3 rounded-xl font-semibold shadow-lg group"
@@ -49,6 +54,7 @@ export default function HeroCard({ slide, onHoverStart, onHoverEnd, onButtonClic
             >
               Explore Courses
             </button>
+
           </div>
         </motion.div>
 
@@ -63,9 +69,11 @@ export default function HeroCard({ slide, onHoverStart, onHoverEnd, onButtonClic
             src={slide.img}
             loading="eager"
             draggable={false}
+            alt="hero"
             className="w-56 md:w-80 object-contain drop-shadow-2xl transition-transform duration-700 hover:scale-110"
           />
         </motion.div>
+
       </div>
     </motion.div>
   );
