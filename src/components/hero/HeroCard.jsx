@@ -1,22 +1,42 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-export default function HeroCard({ slide, onHoverStart, onHoverEnd, onButtonClick }) {
+export default function HeroCard({ slide, onButtonClick }) {
   const navigate = useNavigate();
 
-  const handleClick = () => {
-    if (window.location.pathname === "/") {
-      onButtonClick(slide.type);
-    } else {
-      navigate("/", { state: { filterType: slide.type } });
+const handleClick = () => {
+  // ✅ Trigger filter (this will scroll via parent)
+  onButtonClick(slide.type);
+
+  // ✅ Navigate if needed
+  if (window.location.pathname !== "/") {
+    navigate("/", { state: { filterType: slide.type } });
+  }
+
+  // ✅ PERFECT SCROLL (no cut, no overlap)
+  setTimeout(() => {
+    const section = document.getElementById("courses-section");
+
+    if (section) {
+      // 🔥 Dynamic navbar offset (mobile + desktop)
+      const yOffset = window.innerWidth < 768 ? -70 : -90;
+
+      const y =
+        section.getBoundingClientRect().top +
+        window.pageYOffset +
+        yOffset;
+
+      window.scrollTo({
+        top: y,
+        behavior: "smooth",
+      });
     }
-  };
+  }, 150); // wait for navigation render
+};
 
   return (
     <motion.div
       whileHover={{ scale: 1.02 }}
-      onMouseEnter={onHoverStart}
-      onMouseLeave={onHoverEnd}
       className={`relative w-full min-h-[420px] rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-r ${slide.bg} text-white p-8 md:p-14`}
     >
       <div className="absolute inset-0 bg-white/10 backdrop-blur-xl pointer-events-none" />

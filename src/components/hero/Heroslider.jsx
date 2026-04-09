@@ -30,21 +30,18 @@ export default function HeroSlider({ onFilterSelect }) {
   const extendedSlides = [...slides, slides[0]];
 
   const [current, setCurrent] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(true);
 
-  // ✅ Smooth auto slide (no lag)
+  // ✅ Always running animation (no pause = no bug)
   useEffect(() => {
-    if (isPaused) return;
-
     const interval = setInterval(() => {
       setCurrent((prev) => prev + 1);
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [isPaused]);
+  }, []);
 
-  // ✅ Infinite loop fix (no jump glitch)
+  // ✅ Infinite smooth loop
   useEffect(() => {
     if (current === slides.length) {
       setTimeout(() => {
@@ -63,7 +60,7 @@ export default function HeroSlider({ onFilterSelect }) {
   return (
     <section className="relative w-full overflow-hidden bg-white py-10 will-change-transform">
       
-      {/* Background blur */}
+      {/* Background */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute w-[500px] h-[500px] bg-indigo-500/20 blur-[120px] rounded-full top-[-100px] left-[-100px]" />
         <div className="absolute w-[400px] h-[400px] bg-pink-500/20 blur-[120px] rounded-full bottom-[-100px] right-[-100px]" />
@@ -83,15 +80,13 @@ export default function HeroSlider({ onFilterSelect }) {
           <div key={index} className="w-full flex-shrink-0 px-4">
             <HeroCard
               slide={slide}
-              onHoverStart={() => setIsPaused(true)}
-              onHoverEnd={() => setIsPaused(false)}
               onButtonClick={handleFilterClick}
             />
           </div>
         ))}
       </motion.div>
 
-      {/* DOTS */}
+      {/* Dots */}
       <div className="mt-8 flex justify-center gap-3">
         {slides.map((_, index) => (
           <button
