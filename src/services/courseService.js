@@ -1,4 +1,5 @@
 import API from "../api/api";
+import courses from "../data/coursesData";
 
 const BASE = "/api/v1/courses";
 

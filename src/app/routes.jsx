@@ -5,6 +5,8 @@ import ProtectedRoute from "../components/ProtectedRoute"
 import CourseList from "../pages/courses/CourseList"
 
 import EditCourse from "../pages/courses/EditCourse"
+import CourseDetailsModal from "../components/courses/CourseDetailsModal"
+
 
 // ================== PUBLIC PAGES ==================
 const HomePage = lazy(() => import("../home/HomePage"))
@@ -78,6 +80,7 @@ export const appRoutes = (
 >
   <Route index element={<SalesDashboard />} />
   <Route path="history" element={<SalesHistory />} />
+  <Route path="course-details" element={<CourseDetailsModal/>} />
 </Route>
   </>
 )

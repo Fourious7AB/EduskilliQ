@@ -48,7 +48,7 @@ export const getUserById = async (id) => {
 
 // ✅ DELETE
 export const deleteUser = async (id) => {
-  return await API.delete(`/admin/${id}`)
+  return await API.delete(`/api/v1/user/${id}`)
 }
 
 // ✅ TOGGLE

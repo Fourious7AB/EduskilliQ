@@ -73,16 +73,16 @@ export default function UserDetails() {
   
   // ✅ DELETE
   const handleDelete = async () => {
-    if (!confirm("Delete this user?")) return
+  if (!confirm("Delete this user?")) return
 
-    try {
-      await deleteUser(user.employeeCode)
-      toast.success("User Deleted")
-      navigate("/admin/users")
-    } catch (err) {
-      toast.error("Delete failed")
-    }
+  try {
+    await deleteUser(user.id)   // ✅ FIXED
+    toast.success("User Deleted")
+    navigate("/admin/users")
+  } catch (err) {
+    toast.error("Delete failed")
   }
+}
 
   if (loading) {
     return <div className="p-10 text-center">Loading...</div>

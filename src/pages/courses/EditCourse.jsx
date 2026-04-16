@@ -3,60 +3,109 @@ import { useParams, useNavigate } from "react-router-dom"
 import toast from "react-hot-toast"
 import { getCourseById, updateCourse } from "../../services/courseService"
 import ImageUploader from "../../components/ImageUploader"
-
+import { uploadPdfToCloudinary, uploadVideoToCloudinary } from "../../services/uploadService"
 export default function EditCourse() {
+
   const { id } = useParams()
   const navigate = useNavigate()
 
   const [form, setForm] = useState({
     courseName: "",
-     title: "",
+    title: "",
     courseClass: "",
     joiningFee: "",
     subscriptionFee: "",
-    image: "", 
+    discountPrice: "",
+    videoUrl: "",
+    pdfUrl: "",
+    image: "",
     enabled: true,
     completed: false
   })
 
   const [loading, setLoading] = useState(true)
 
-  // ✅ FETCH SINGLE COURSE (FIXED)
- useEffect(() => {
-  const fetchCourse = async () => {
+  
+  // ✅ FETCH
+  useEffect(() => {
+    const fetchCourse = async () => {
+      try {
+        const data = await getCourseById(id)
+
+        setForm({
+          courseName: data.courseName || "",
+          title: data.title || "",
+          courseClass: data.courseClass || "",
+          joiningFee: data.joiningFee ?? 0,
+          subscriptionFee: data.subscriptionFee ?? 0,
+          discountPrice: data.discountPrice ?? 0,
+          videoUrl: data.videoUrl || "",
+          pdfUrl: data.pdfUrl || "",
+          enabled: data.enabled ?? true,
+          completed: data.completed ?? false,
+          image: data.image || ""
+        })
+
+      } catch {
+        toast.error("Failed to load course")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCourse()
+  }, [id])
+
+  // ✅ PDF UPLOAD
+  const handlePdfUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
     try {
-      const data = await getCourseById(id)
-
-      setForm({
-        courseName: data.courseName || "",
-        title: data.title || "",
-        courseClass: data.courseClass || "",
-        joiningFee: data.joiningFee ?? 0,
-        subscriptionFee: data.subscriptionFee ?? 0,
-        enabled: data.enabled ?? true,
-        completed: data.completed ?? false,
-        image: data.image || ""
-      })
-
+      const url = await uploadPdfToCloudinary(file)
+      setForm(prev => ({ ...prev, pdfUrl: url }))
+      toast.success("PDF uploaded")
     } catch {
-      toast.error("Failed to load course")
-    } finally {
-      setLoading(false)
+      toast.error("PDF upload failed")
     }
   }
 
-  fetchCourse()
-}, [id])
+  //video
+  const handleVideoUpload = async (e) => {
+  const file = e.target.files[0]
+  if (!file) return
 
-  // ✅ UPDATE COURSE
+  // ✅ 700MB LIMIT
+  if (file.size > 700 * 1024 * 1024) {
+    toast.error("Max 700MB video allowed")
+    return
+  }
+
+  try {
+    const url = await uploadVideoToCloudinary(file)
+
+    console.log("UPLOADED VIDEO URL:", url) // ✅ DEBUG
+
+    setForm(prev => ({ ...prev, videoUrl: url }))
+    toast.success("Video uploaded")
+  } catch (err) {
+    console.error(err)
+    toast.error("Video upload failed")
+  }
+}
+
+  // ✅ UPDATE
   const handleSubmit = async (e) => {
     e.preventDefault()
 
     try {
       await updateCourse(id, {
-  ...form,
-  image: form.image
-})
+        ...form,
+        joiningFee: Number(form.joiningFee),
+        subscriptionFee: Number(form.subscriptionFee),
+        discountPrice: Number(form.discountPrice)
+      })
+
       toast.success("Course updated successfully")
       navigate("/admin/courses")
     } catch {
@@ -64,9 +113,7 @@ export default function EditCourse() {
     }
   }
 
-  if (loading) {
-    return <div className="p-6">Loading...</div>
-  }
+  if (loading) return <div className="p-6">Loading...</div>
 
   return (
     <div className="p-6 flex justify-center">
@@ -77,7 +124,6 @@ export default function EditCourse() {
       >
         <h2 className="text-xl font-bold">Edit Course</h2>
 
-        {/* COURSE NAME */}
         <input
           type="text"
           placeholder="Course Name"
@@ -85,31 +131,29 @@ export default function EditCourse() {
           onChange={(e) =>
             setForm({ ...form, courseName: e.target.value })
           }
-          className="w-full p-3 border rounded-xl bg-transparent"
+          className="w-full p-3 border rounded-xl"
         />
-        {/* TITLE */}
-<input
-  type="text"
-  placeholder="Course Title"
-  value={form.title || ""}
-  onChange={(e) =>
-    setForm({ ...form, title: e.target.value })
-  }
-  className="w-full p-3 border rounded-xl bg-transparent"
-/>
 
-        {/* CLASS */}
         <input
           type="text"
-          placeholder="Course Class"
+          placeholder="Course Title"
+          value={form.title}
+          onChange={(e) =>
+            setForm({ ...form, title: e.target.value })
+          }
+          className="w-full p-3 border rounded-xl"
+        />
+
+        <input
+          type="text"
+          placeholder="Class"
           value={form.courseClass}
           onChange={(e) =>
             setForm({ ...form, courseClass: e.target.value })
           }
-          className="w-full p-3 border rounded-xl bg-transparent"
+          className="w-full p-3 border rounded-xl"
         />
 
-        {/* JOINING FEE */}
         <input
           type="number"
           placeholder="Joining Fee"
@@ -117,10 +161,9 @@ export default function EditCourse() {
           onChange={(e) =>
             setForm({ ...form, joiningFee: e.target.value })
           }
-          className="w-full p-3 border rounded-xl bg-transparent"
+          className="w-full p-3 border rounded-xl"
         />
 
-        {/* SUBSCRIPTION FEE */}
         <input
           type="number"
           placeholder="Subscription Fee"
@@ -128,63 +171,104 @@ export default function EditCourse() {
           onChange={(e) =>
             setForm({ ...form, subscriptionFee: e.target.value })
           }
-          className="w-full p-3 border rounded-xl bg-transparent"
+          className="w-full p-3 border rounded-xl"
         />
 
-        {/* STATUS TOGGLES */}
-        <div className="flex justify-between text-sm">
+        <input
+          type="number"
+          placeholder="Discount Price"
+          value={form.discountPrice}
+          onChange={(e) =>
+            setForm({ ...form, discountPrice: e.target.value })
+          }
+          className="w-full p-3 border rounded-xl"
+        />
 
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={form.enabled}
-              onChange={(e) =>
-                setForm({ ...form, enabled: e.target.checked })
-              }
-            />
-            Enabled
-          </label>
+        
+ {/* 🎥 VIDEO UPLOAD */}
+<div>
+  <label className="block text-sm font-medium mb-1">
+    Upload Video
+  </label>
 
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={form.completed}
-              onChange={(e) =>
-                setForm({ ...form, completed: e.target.checked })
-              }
-            />
-            Completed
-          </label>
+  <input
+    type="file"
+    accept="video/*"
+    id="videoUpload"
+    hidden
+    onChange={handleVideoUpload}
+  />
 
-        </div>
-        {/* EXISTING IMAGE */}
-{form.image && (
-  <img src={form.image} className="h-32 rounded-xl object-cover" />
-)}
+  <label
+    htmlFor="videoUpload"
+    className="block w-full p-3 border rounded-xl cursor-pointer text-center hover:bg-gray-50"
+  >
+    Choose Video File
+  </label>
 
-{/* UPLOAD */}
-<ImageUploader
-  value={form.image}
-  onChange={(url) =>
-    setForm({ ...form, image: url })
-  }
-/>
+  {form.videoUrl && (
+    <video
+      controls
+      className="w-full rounded-xl mt-2"
+    >
+      <source src={form.videoUrl} type="video/mp4" />
+      Your browser does not support the video tag.
+    </video>
+  )}
+</div>
 
-        {/* ACTIONS */}
+{/* 📄 PDF */}
+<div>
+  <label className="block text-sm mb-1">Upload PDF</label>
+
+  <input
+    type="file"
+    accept="application/pdf"
+    id="pdfUpload"
+    hidden
+    onChange={handlePdfUpload}
+  />
+
+  <label
+    htmlFor="pdfUpload"
+    className="block w-full p-3 border rounded-xl text-center cursor-pointer"
+  >
+    Choose PDF File
+  </label>
+
+  {/* ✅ PREVIEW */}
+  {form.pdfUrl && (
+    <iframe
+      src={form.pdfUrl}
+      className="w-full h-64 mt-3 rounded-xl border"
+      title="PDF Preview"
+    />
+  )}
+</div>
+
+        {form.image && (
+          <img src={form.image} className="h-32 rounded-xl object-cover" />
+        )}
+
+        <ImageUploader
+          value={form.image}
+          onChange={(url) =>
+            setForm({ ...form, image: url })
+          }
+        />
+
         <div className="flex justify-between">
-
           <button
             type="button"
             onClick={() => navigate("/admin/courses")}
-            className="px-4 py-2 rounded-xl border"
+            className="px-4 py-2 border rounded-xl"
           >
             Cancel
           </button>
 
-          <button className="bg-[var(--primary)] text-white px-4 py-2 rounded-xl hover:opacity-90">
+          <button className="bg-[var(--primary)] text-white px-4 py-2 rounded-xl">
             Update
           </button>
-
         </div>
 
       </form>

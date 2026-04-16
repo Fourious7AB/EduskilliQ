@@ -206,7 +206,7 @@ const preSelectedCourseId = location.state?.courseId
   {selectedCourse.title || selectedCourse.courseName}
 </p>
               <p className="text-indigo-600 text-xl font-bold mt-2">
-                ₹ {selectedCourse.joiningFee}
+                ₹ {selectedCourse.discountPrice}
               </p>
             </div>
           )}
