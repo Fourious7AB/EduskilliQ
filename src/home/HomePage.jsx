@@ -127,9 +127,9 @@ export default function HomePage() {
       <div className="h-px bg-gradient-to-r from-transparent via-gray-300/50 to-transparent my-14" />
 
       {/* REVIEWS */}
-      <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
+      {/* <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
         <ReviewSection />
-      </Suspense>
+      </Suspense> */}
 
     </div>
   );
